@@ -22,6 +22,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor.DartCallback
 import io.flutter.view.FlutterCallbackInformation
 import kotlinx.serialization.json.Json
+import androidx.core.app.NotificationCompat
 
 class NativeGeofenceBackgroundWorker(
     private val context: Context,
@@ -50,12 +51,31 @@ class NativeGeofenceBackgroundWorker(
     private var backgroundApiImpl: NativeGeofenceBackgroundApiImpl? = null
 
     override fun getForegroundInfoAsync(): ListenableFuture<ForegroundInfo> {
+        // For Android 12 (S) and above, this method is called by the system
+        // but doesn't require us to implement the functionality
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // This method does not need to be implemented for Android 31 (S) and above.
             return super.getForegroundInfoAsync()
         }
-        val notification = Notifications.createBackgroundWorkerNotification(context)
-        return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, notification))
+        
+        try {
+            // For all Android versions below Android 12 (API 31), create the notification
+            val notification = Notifications.createBackgroundWorkerNotification(context)
+            return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, notification))
+        } catch (e: Exception) {
+            // If there's any exception (like on old devices), log it but avoid crash
+            Log.e(TAG, "Error creating foreground notification: ${e.message}")
+            // Return a default future to avoid crashes
+            return CallbackToFutureAdapter.getFuture { completer ->
+                completer.set(ForegroundInfo(NOTIFICATION_ID, 
+                    NotificationCompat.Builder(context, "fallback_channel")
+                        .setSmallIcon(android.R.drawable.ic_dialog_info)
+                        .setContentTitle("App is running")
+                        .setPriority(NotificationCompat.PRIORITY_LOW)
+                        .build()
+                ))
+                null
+            }
+        }
     }
 
     override fun startWork(): ListenableFuture<Result> {

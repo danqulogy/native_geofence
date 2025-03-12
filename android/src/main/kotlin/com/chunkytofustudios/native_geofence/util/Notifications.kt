@@ -2,13 +2,18 @@ package com.chunkytofustudios.native_geofence.util
 
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
+import android.app.NotificationManager
+import android.app.NotificationChannel
 
 class Notifications {
     companion object {
+        private const val CHANNEL_ID = "native_geofence_plugin_channel"
+        private const val NOTIFICATION_TITLE = "Processing geofence event."
+        private const val NOTIFICATION_TEXT = "We noticed you are near a key location and are checking if we can help."
+
         fun createBackgroundWorkerNotification(context: Context): Notification {
             // Background Worker notification is only needed for Android 30 and below (30% of users
             // as of Jan 2025), so we are re-using the Foreground Service notification.
@@ -17,27 +22,33 @@ class Notifications {
 
         // TODO: Make notification details customizable by plugin user.
         fun createForegroundServiceNotification(context: Context): Notification {
-            val channelId = "native_geofence_plugin_channel"
-            val channel = NotificationChannel(
-                channelId,
-                "Geofence Events",
-                // This has to be at least IMPORTANCE_LOW.
-                // Source: https://developer.android.com/develop/background-work/services/foreground-services#start
-                NotificationManager.IMPORTANCE_LOW
-            )
-
             @SuppressLint("DiscouragedApi") // Can't use R syntax in Flutter plugin.
             val imageId = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
-
-            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
-                channel
-            )
-            return NotificationCompat.Builder(context, channelId)
-                .setContentTitle("Processing geofence event.")
-                .setContentText("We noticed you are near a key location and are checking if we can help.")
+            
+            // Get the notification manager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Create notification builder
+            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(NOTIFICATION_TITLE)
+                .setContentText(NOTIFICATION_TEXT)
                 .setSmallIcon(imageId)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build()
+            
+            // Create notification channel for Android 8.0+ (API 26+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    "Geofence Events",
+                    NotificationManager.IMPORTANCE_LOW
+                )
+                notificationManager.createNotificationChannel(channel)
+            } else {
+                // For older versions, we still need to set the priority using the old method
+                builder.priority = Notification.PRIORITY_LOW
+            }
+            
+            return builder.build()
         }
     }
 }
