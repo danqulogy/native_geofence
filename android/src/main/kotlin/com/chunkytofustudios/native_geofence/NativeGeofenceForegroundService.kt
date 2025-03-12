@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.Build
 import android.util.Log
 import com.chunkytofustudios.native_geofence.util.Notifications
 import kotlin.time.Duration.Companion.minutes
@@ -49,7 +50,11 @@ class NativeGeofenceForegroundService : Service() {
                     }
                 }
             }
-            stopForeground(STOP_FOREGROUND_REMOVE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                stopForeground(true)
+            }
             stopSelf()
             Log.d(TAG, "Foreground service stopped.")
         }

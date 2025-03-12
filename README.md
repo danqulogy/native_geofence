@@ -37,9 +37,9 @@ The latest Kotlin version can be found [here](https://mvnrepository.com/artifact
 
 NOTE: You may also need Gradle 8+ to use this plugin. See this [issue](https://github.com/ChunkyTofuStudios/native_geofence/issues/4).
 
-2. Set your `minSdkVersion` to `26` or above.
+2. Set your `minSdkVersion` to `25` or above.
 
-*Explanation: If you need to support prior Android builds it might be possible to accommodate this. Please send a PR or file a bug.*
+*Explanation: The library has been modified to support Android 7.1 (API 25) and above.*
 
 See the [example plugin](https://github.com/ChunkyTofuStudios/native_geofence/blob/main/example/android/app/src/main/AndroidManifest.xml) for a full demonstration.
 
