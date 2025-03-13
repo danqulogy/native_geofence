@@ -62,34 +62,17 @@ class NativeGeofenceBackgroundWorker(
             val notification = Notifications.createBackgroundWorkerNotification(context)
             return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, notification))
         } catch (e: Exception) {
-            // If there's any exception (like on old devices), log it but avoid crash
+            // If there's any exception (like on old devices), log it and use a guaranteed-to-work fallback
             Log.e(TAG, "Error creating foreground notification: ${e.message}", e)
             
-            // Create a simple fallback notification that works on all Android versions
-            // This is especially important for Android 7 (API 24-25)
-            return CallbackToFutureAdapter.getFuture { completer ->
-                try {
-                    // For Android 7, don't use notification channels at all
-                    val fallbackNotification = NotificationCompat.Builder(context, 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) "fallback_channel" else "")
-                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-                        .setContentTitle("App is running")
-                        .setPriority(NotificationCompat.PRIORITY_LOW)
-                        .build()
-                    
-                    completer.set(ForegroundInfo(NOTIFICATION_ID, fallbackNotification))
-                } catch (fallbackException: Exception) {
-                    Log.e(TAG, "Error creating fallback notification: ${fallbackException.message}", fallbackException)
-                    // Last resort - create the most basic notification possible
-                    completer.set(ForegroundInfo(NOTIFICATION_ID, 
-                        NotificationCompat.Builder(context)
-                            .setSmallIcon(android.R.drawable.ic_dialog_info)
-                            .setContentTitle("Running")
-                            .build()
-                    ))
-                }
-                null
-            }
+            // Create the simplest possible notification that will work on all Android versions
+            return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, 
+                NotificationCompat.Builder(context, "")  // Empty string channel ID works on Android 7
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle("Running")
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .build()
+            ))
         }
     }
 

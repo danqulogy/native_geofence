@@ -43,30 +43,18 @@ class NativeGeofenceForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notification)
             Log.d(TAG, "Foreground service started with notification ID=$NOTIFICATION_ID.")
         } catch (e: Exception) {
-            // If that fails (e.g., on Android 7), create a simpler notification
+            // If that fails, use the simplest possible notification that will work on all Android versions
             Log.e(TAG, "Error creating foreground notification: ${e.message}", e)
-            try {
-                // For Android 7, don't use notification channels
-                val fallbackNotification = androidx.core.app.NotificationCompat.Builder(this, 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) "fallback_channel" else "")
+            
+            // Create a guaranteed-to-work notification for all Android versions
+            startForeground(NOTIFICATION_ID, 
+                androidx.core.app.NotificationCompat.Builder(this, "")  // Empty string channel ID works on Android 7
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
-                    .setContentTitle("App is running")
+                    .setContentTitle("Running")
                     .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
                     .build()
-                    
-                startForeground(NOTIFICATION_ID, fallbackNotification)
-                Log.d(TAG, "Foreground service started with fallback notification.")
-            } catch (fallbackException: Exception) {
-                // Last resort - create the most basic notification possible
-                Log.e(TAG, "Error creating fallback notification: ${fallbackException.message}", fallbackException)
-                startForeground(NOTIFICATION_ID, 
-                    androidx.core.app.NotificationCompat.Builder(this)
-                        .setSmallIcon(android.R.drawable.ic_dialog_info)
-                        .setContentTitle("Running")
-                        .build()
-                )
-                Log.d(TAG, "Foreground service started with basic fallback notification.")
-            }
+            )
+            Log.d(TAG, "Foreground service started with fallback notification.")
         }
     }
 

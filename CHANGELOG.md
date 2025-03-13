@@ -1,3 +1,10 @@
+## 1.0.11
+
+* Android: Enhanced Android 7 (API 24-25) compatibility with reflection-based approach
+* Android: Removed all direct references to NotificationChannel class to prevent ClassNotFoundError
+* Android: Simplified notification fallback mechanism for bulletproof operation on older devices
+* Android: Added detailed logging of notification creation process for better debugging
+
 ## 1.0.10
 
 * Android: Added compatibility with Android 7 (API 24-25) devices

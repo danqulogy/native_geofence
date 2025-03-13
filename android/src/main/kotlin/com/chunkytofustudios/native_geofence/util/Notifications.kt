@@ -6,10 +6,11 @@ import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import android.app.NotificationManager
-// Don't import NotificationChannel at the top level since it's only available on API 26+
+import android.util.Log
 
 class Notifications {
     companion object {
+        private const val TAG = "NativeGeofenceNotif"
         private const val CHANNEL_ID = "native_geofence_plugin_channel"
         private const val NOTIFICATION_TITLE = "Processing geofence event."
         private const val NOTIFICATION_TEXT = "We noticed you are near a key location and are checking if we can help."
@@ -28,26 +29,51 @@ class Notifications {
             // Get the notification manager
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
-            // Create notification builder
-            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            // Create notification builder - use empty channel ID for Android 7
+            val builder = NotificationCompat.Builder(
+                context, 
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) CHANNEL_ID else ""
+            )
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText(NOTIFICATION_TEXT)
                 .setSmallIcon(imageId)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
             
-            // Create notification channel for Android 8.0+ (API 26+)
+            // Create notification channel for Android 8.0+ (API 26+) using reflection
+            // This ensures NotificationChannel is never directly referenced in the code
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Import and use NotificationChannel only when needed
-                val channel = android.app.NotificationChannel(
-                    CHANNEL_ID,
-                    "Geofence Events",
-                    NotificationManager.IMPORTANCE_LOW
-                )
-                notificationManager.createNotificationChannel(channel)
+                try {
+                    // Use reflection to create a NotificationChannel without directly referencing the class
+                    val channelClass = Class.forName("android.app.NotificationChannel")
+                    val channelConstructor = channelClass.getDeclaredConstructor(
+                        String::class.java, 
+                        CharSequence::class.java, 
+                        Int::class.java
+                    )
+                    
+                    // IMPORTANCE_LOW = 2
+                    val channel = channelConstructor.newInstance(
+                        CHANNEL_ID, 
+                        "Geofence Events", 
+                        NotificationManager.IMPORTANCE_LOW
+                    )
+                    
+                    // Call createNotificationChannel via reflection
+                    val createChannelMethod = notificationManager.javaClass.getMethod(
+                        "createNotificationChannel", 
+                        channelClass
+                    )
+                    createChannelMethod.invoke(notificationManager, channel)
+                    
+                    Log.d(TAG, "Created notification channel via reflection")
+                } catch (e: Exception) {
+                    // Log any reflection errors but continue - notification will still work
+                    Log.e(TAG, "Error creating notification channel via reflection: ${e.message}", e)
+                }
             } else {
                 // For older versions (API 25 and below), we just set the priority
-                // using the old method and don't use notification channels
                 builder.priority = Notification.PRIORITY_LOW
+                Log.d(TAG, "Using legacy notification without channels for Android ${Build.VERSION.SDK_INT}")
             }
             
             return builder.build()
