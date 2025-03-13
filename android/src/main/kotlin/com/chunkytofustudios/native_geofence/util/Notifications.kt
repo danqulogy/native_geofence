@@ -6,7 +6,7 @@ import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import android.app.NotificationManager
-import android.app.NotificationChannel
+// Don't import NotificationChannel at the top level since it's only available on API 26+
 
 class Notifications {
     companion object {
@@ -37,14 +37,16 @@ class Notifications {
             
             // Create notification channel for Android 8.0+ (API 26+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
+                // Import and use NotificationChannel only when needed
+                val channel = android.app.NotificationChannel(
                     CHANNEL_ID,
                     "Geofence Events",
                     NotificationManager.IMPORTANCE_LOW
                 )
                 notificationManager.createNotificationChannel(channel)
             } else {
-                // For older versions, we still need to set the priority using the old method
+                // For older versions (API 25 and below), we just set the priority
+                // using the old method and don't use notification channels
                 builder.priority = Notification.PRIORITY_LOW
             }
             
