@@ -41,20 +41,19 @@ class NativeGeofenceForegroundService : Service() {
         try {
             val notification = Notifications.createForegroundServiceNotification(this)
             startForeground(NOTIFICATION_ID, notification)
-            Log.d(TAG, "Foreground service started with notification ID=$NOTIFICATION_ID.")
+            Log.d(TAG, "Foreground service started with standard notification.")
         } catch (e: Exception) {
-            // If that fails, use the simplest possible notification that will work on all Android versions
-            Log.e(TAG, "Error creating foreground notification: ${e.message}", e)
+            // If that fails, create the simplest possible notification
+            Log.e(TAG, "Error creating standard notification: ${e.message}", e)
             
-            // Create a guaranteed-to-work notification for all Android versions
-            startForeground(NOTIFICATION_ID, 
-                androidx.core.app.NotificationCompat.Builder(this, "")  // Empty string channel ID works on Android 7
-                    .setSmallIcon(android.R.drawable.ic_dialog_info)
-                    .setContentTitle("Running")
-                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
-                    .build()
-            )
-            Log.d(TAG, "Foreground service started with fallback notification.")
+            // Create the absolute minimum notification
+            val fallbackNotification = androidx.core.app.NotificationCompat.Builder(this, "")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Running")
+                .build()
+                
+            startForeground(NOTIFICATION_ID, fallbackNotification)
+            Log.d(TAG, "Foreground service started with emergency fallback notification.")
         }
     }
 

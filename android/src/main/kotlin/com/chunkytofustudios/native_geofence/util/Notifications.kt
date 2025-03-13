@@ -16,67 +16,70 @@ class Notifications {
         private const val NOTIFICATION_TEXT = "We noticed you are near a key location and are checking if we can help."
 
         fun createBackgroundWorkerNotification(context: Context): Notification {
-            // Background Worker notification is only needed for Android 30 and below (30% of users
-            // as of Jan 2025), so we are re-using the Foreground Service notification.
             return createForegroundServiceNotification(context)
         }
 
-        // TODO: Make notification details customizable by plugin user.
         fun createForegroundServiceNotification(context: Context): Notification {
-            @SuppressLint("DiscouragedApi") // Can't use R syntax in Flutter plugin.
-            val imageId = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
-            
-            // Get the notification manager
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            
-            // Create notification builder - use empty channel ID for Android 7
-            val builder = NotificationCompat.Builder(
-                context, 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) CHANNEL_ID else ""
-            )
-                .setContentTitle(NOTIFICATION_TITLE)
-                .setContentText(NOTIFICATION_TEXT)
-                .setSmallIcon(imageId)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-            
-            // Create notification channel for Android 8.0+ (API 26+) using reflection
-            // This ensures NotificationChannel is never directly referenced in the code
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    // Use reflection to create a NotificationChannel without directly referencing the class
-                    val channelClass = Class.forName("android.app.NotificationChannel")
-                    val channelConstructor = channelClass.getDeclaredConstructor(
-                        String::class.java, 
-                        CharSequence::class.java, 
-                        Int::class.java
-                    )
-                    
-                    // IMPORTANCE_LOW = 2
-                    val channel = channelConstructor.newInstance(
-                        CHANNEL_ID, 
-                        "Geofence Events", 
-                        NotificationManager.IMPORTANCE_LOW
-                    )
-                    
-                    // Call createNotificationChannel via reflection
-                    val createChannelMethod = notificationManager.javaClass.getMethod(
-                        "createNotificationChannel", 
-                        channelClass
-                    )
-                    createChannelMethod.invoke(notificationManager, channel)
-                    
-                    Log.d(TAG, "Created notification channel via reflection")
-                } catch (e: Exception) {
-                    // Log any reflection errors but continue - notification will still work
-                    Log.e(TAG, "Error creating notification channel via reflection: ${e.message}", e)
-                }
-            } else {
-                // For older versions (API 25 and below), we just set the priority
-                builder.priority = Notification.PRIORITY_LOW
-                Log.d(TAG, "Using legacy notification without channels for Android ${Build.VERSION.SDK_INT}")
+            // Use a completely separate code path for Android 7
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                return createPreOreoNotification(context)
             }
             
-            return builder.build()
+            // This code will never be loaded on Android 7 devices
+            return createOreoNotification(context)
+        }
+        
+        // This is the ONLY method that will be called on Android 7 (API 24-25) devices
+        private fun createPreOreoNotification(context: Context): Notification {
+            Log.d(TAG, "Creating Android 7 notification (no channels)") 
+            
+            @SuppressLint("DiscouragedApi")
+            val imageId = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
+            val iconId = if (imageId != 0) imageId else android.R.drawable.ic_dialog_info
+            
+            // Create notification without any channel ID - this is safe for Android 7
+            return NotificationCompat.Builder(context, "")
+                .setContentTitle(NOTIFICATION_TITLE)
+                .setContentText(NOTIFICATION_TEXT)
+                .setSmallIcon(iconId)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+        }
+        
+        // This method is NEVER called on Android 7, so it's safe to use Android 8+ APIs
+        private fun createOreoNotification(context: Context): Notification {
+            Log.d(TAG, "Creating Android 8+ notification with channels")
+            
+            // Since this code never runs on Android 7, it's safe to use NotificationChannel
+            // But we'll still add a safety check just to be sure
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                @SuppressLint("DiscouragedApi")
+                val imageId = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
+                val iconId = if (imageId != 0) imageId else android.R.drawable.ic_dialog_info
+                
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                
+                // Create notification channel
+                // This is safe because this method is never called on Android 7
+                val channel = android.app.NotificationChannel(
+                    CHANNEL_ID,
+                    "Geofence Events",
+                    NotificationManager.IMPORTANCE_LOW
+                )
+                notificationManager.createNotificationChannel(channel)
+                
+                // Return the notification with channel ID
+                return NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setContentTitle(NOTIFICATION_TITLE)
+                    .setContentText(NOTIFICATION_TEXT)
+                    .setSmallIcon(iconId)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .build()
+            } else {
+                // This should never happen due to our version check in the caller
+                // But just in case, return a safe notification
+                return createPreOreoNotification(context)
+            }
         }
     }
 }

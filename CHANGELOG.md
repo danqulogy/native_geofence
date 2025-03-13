@@ -1,3 +1,10 @@
+## 1.0.12
+
+* Android: Complete rewrite of notification handling mechanism for Android 7 compatibility
+* Android: Implemented separate code paths for different Android versions to avoid ClassNotFoundError
+* Android: Eliminated all direct and indirect references to NotificationChannel in Android 7 code
+* Android: Simplified notification creation with minimal fallback for guaranteed operation
+
 ## 1.0.11
 
 * Android: Enhanced Android 7 (API 24-25) compatibility with reflection-based approach

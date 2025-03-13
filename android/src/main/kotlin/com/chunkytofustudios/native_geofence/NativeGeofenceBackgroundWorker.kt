@@ -60,19 +60,20 @@ class NativeGeofenceBackgroundWorker(
         try {
             // For all Android versions below Android 12 (API 31), create the notification
             val notification = Notifications.createBackgroundWorkerNotification(context)
+            Log.d(TAG, "Created standard background notification")
             return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, notification))
         } catch (e: Exception) {
-            // If there's any exception (like on old devices), log it and use a guaranteed-to-work fallback
-            Log.e(TAG, "Error creating foreground notification: ${e.message}", e)
+            // If there's any exception, log it and create an absolute minimum notification
+            Log.e(TAG, "Error creating standard notification: ${e.message}", e)
             
-            // Create the simplest possible notification that will work on all Android versions
-            return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, 
-                NotificationCompat.Builder(context, "")  // Empty string channel ID works on Android 7
-                    .setSmallIcon(android.R.drawable.ic_dialog_info)
-                    .setContentTitle("Running")
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
-                    .build()
-            ))
+            // Create the simplest possible notification
+            val fallbackNotification = NotificationCompat.Builder(context, "")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Running")
+                .build()
+                
+            Log.d(TAG, "Created emergency fallback notification")
+            return Futures.immediateFuture(ForegroundInfo(NOTIFICATION_ID, fallbackNotification))
         }
     }
 
