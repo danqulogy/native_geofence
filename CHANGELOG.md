@@ -1,3 +1,11 @@
+## 1.0.10
+
+* Android: Added compatibility with Android 7 (API 24-25) devices
+* Android: Fixed notification-related crashes on older Android versions
+* Android: Implemented robust fallback mechanisms for notification creation
+* Android: Improved error handling throughout notification pipeline
+* Documentation: Updated README with Android 7 compatibility information
+
 ## 1.0.9
 
 * Minor visibility fix: Make `NativeGeofenceException` visible to library users.

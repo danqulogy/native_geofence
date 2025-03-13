@@ -21,6 +21,7 @@ Battery efficient Flutter geofencing plugin that uses native iOS and Android API
 * Geofences are re-registered after device reboot
 * Fetch currently registered geofences
 * [Android] Run foreground service to handle geofence event
+* [Android] Compatible with Android 7+ (API level 24+) for full functionality
 
 ## Setup
 
@@ -37,9 +38,9 @@ The latest Kotlin version can be found [here](https://mvnrepository.com/artifact
 
 NOTE: You may also need Gradle 8+ to use this plugin. See this [issue](https://github.com/ChunkyTofuStudios/native_geofence/issues/4).
 
-2. Set your `minSdkVersion` to `26` or above.
+2. Set your `minSdkVersion` to `24` or above.
 
-*Explanation: If you need to support prior Android builds it might be possible to accommodate this. Please send a PR or file a bug.*
+*Explanation: This plugin now supports Android 7 (API 24) and above. While Android 8+ is recommended for optimal performance, Android 7 is fully supported with appropriate fallbacks.*
 
 See the [example plugin](https://github.com/ChunkyTofuStudios/native_geofence/blob/main/example/android/app/src/main/AndroidManifest.xml) for a full demonstration.
 
@@ -302,6 +303,14 @@ Pull requests are welcome.
 
 * **iOS:** After reboot, the first geofence event is triggered twice, one immediatly after the other. We recommend checking the last trigger time of a geofence in your app to discard duplicates.
 * **Android:** The emulator does not trigger geofence events if there are no apps accessing the device location. This is an [emulator issue](https://www.b4x.com/android/forum/threads/solved-sanity-check-does-the-android-emulator-work-with-geofences.139196/page-2#post-881415). As a workaround you can open Google Maps to get a location fix which will in turn trigger the geofence.
+
+## Recent Changes
+
+### Android 7 (API 24-25) Compatibility
+* Added proper notification compatibility for Android 7 devices
+* Implemented robust fallback mechanisms for notification creation
+* Fixed notifications that were previously causing crashes on Android 7
+* Improved error handling throughout the notification pipeline
 
 ## Author
 
